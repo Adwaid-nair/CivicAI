@@ -1,0 +1,9 @@
+{
+  "name": "CivicAI",
+  "description": "An autonomous AI-powered civic issue reporting platform. Detects issues from photos, drafts official complaints, and simulates authority interaction.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
