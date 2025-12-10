@@ -3,6 +3,7 @@ import { analyzeIssueImage, draftComplaint } from '../services/geminiService';
 import { saveTicket } from '../services/dbService';
 import { Ticket, IssueStatus, Severity, Coordinates } from '../types';
 import { AUTHORITIES } from '../constants';
+import ChatAssistant from '../components/ChatAssistant';
 
 interface ReportIssueProps {
   onNavigate: (page: string, id?: string) => void;
@@ -15,23 +16,16 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
   const [isListening, setIsListening] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
   const [location, setLocation] = useState<Coordinates | null>(null);
+  const [showAssistant, setShowAssistant] = useState(false);
   
-  // New state for robust handling
+  // Robust handling states
   const [addressText, setAddressText] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  const toggleListening = () => {
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      return;
-    }
-
+  const startListening = () => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       alert("Voice recognition not supported in this browser environment.");
       return;
@@ -44,15 +38,27 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
       recognitionRef.current = recognition;
 
       recognition.lang = 'en-US'; 
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.continuous = false; // Auto-detect end of speech
+      recognition.interimResults = true;
 
       recognition.onstart = () => setIsListening(true);
       
       recognition.onresult = (event: any) => {
-        const lastResultIndex = event.results.length - 1;
-        const transcript = event.results[lastResultIndex][0].transcript;
-        setAudioTranscript(prev => prev ? `${prev} ${transcript}` : transcript);
+        // Handle interim results for better feedback, but only commit final
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+             setAudioTranscript(prev => {
+                 // Smart spacing: add space if prev exists and doesn't end in space
+                 const spacer = prev && !prev.endsWith(' ') ? ' ' : '';
+                 return prev + spacer + finalTranscript;
+             });
+        }
       };
 
       recognition.onerror = (event: any) => {
@@ -67,6 +73,29 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
       console.error("Failed to start recognition", e);
       setIsListening(false);
     }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsListening(false);
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
+  const handleReRecord = () => {
+    setAudioTranscript("");
+    // Short delay to ensure state clears before restarting
+    setTimeout(() => {
+        startListening();
+    }, 50);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,15 +167,11 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
   };
 
   const handleSubmit = async () => {
-    // Prevent double submission
     if (isSubmitting || !analysis || !image) return;
-
     setIsSubmitting(true);
 
     try {
         const auth = AUTHORITIES.find(a => a.type === analysis.authorityType) || AUTHORITIES[0];
-        
-        // Generate simple 4-digit ID
         const simpleId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
 
         const newTicket: Ticket = {
@@ -157,7 +182,7 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
           severity: analysis.severity,
           status: IssueStatus.OPEN,
           location: location || { lat: 0, lng: 0 },
-          address: analysis.address || addressText, // Prefer analysis address if enriched
+          address: analysis.address || addressText,
           createdAt: Date.now(),
           updatedAt: Date.now(),
           votes: 0,
@@ -184,11 +209,8 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
           ]
         };
 
-        // Simulate save delay for better UX
         await new Promise(resolve => setTimeout(resolve, 500));
         saveTicket(newTicket);
-        
-        // Navigate away
         onNavigate('dashboard');
     } catch (error) {
         console.error("Submission failed", error);
@@ -235,26 +257,82 @@ const ReportIssue: React.FC<ReportIssueProps> = ({ onNavigate }) => {
             />
             
             <div className="mt-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Voice Note / Description</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex justify-between items-center">
+                  <span>Voice Note / Description</span>
+                  <span className="text-xs text-slate-400">Add details for better AI analysis</span>
+              </label>
               <div className="relative">
                 <textarea 
                   value={audioTranscript}
                   onChange={(e) => setAudioTranscript(e.target.value)}
                   className="w-full p-4 pr-12 bg-white text-slate-900 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder-slate-400 text-base resize-y min-h-[120px]"
-                  placeholder="Describe the issue or tap the mic to speak (English)..."
+                  placeholder="Describe the issue or tap the mic to speak..."
                   rows={4}
                 />
-                <button 
-                  onClick={toggleListening}
-                  className={`absolute right-3 top-3 p-2 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                  title={isListening ? "Stop Listening" : "Start Voice Input"}
-                >
-                  <i className={`fa-solid ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
-                </button>
+                
+                {/* Voice & Assistant Controls */}
+                <div className="absolute right-2 top-2 flex gap-1">
+                    {/* Clear Text Button */}
+                    {audioTranscript && !isListening && (
+                        <button
+                            type="button"
+                            onClick={() => setAudioTranscript('')}
+                            className="p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="Clear text"
+                        >
+                            <i className="fa-solid fa-trash"></i>
+                        </button>
+                    )}
+
+                    {/* AI Helper Toggle */}
+                    <button
+                        type="button"
+                        onClick={() => setShowAssistant(!showAssistant)}
+                        className={`p-2 rounded-full transition-colors ${showAssistant ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500 hover:bg-blue-50'}`}
+                        title="AI Assistant"
+                    >
+                        <i className="fa-solid fa-wand-magic-sparkles"></i>
+                    </button>
+
+                    {/* Mic Toggle Button */}
+                    <button 
+                        type="button"
+                        onClick={toggleListening}
+                        className={`p-2 rounded-full transition-all border ${isListening ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'}`}
+                        title={isListening ? "Stop Listening" : "Start Voice Input"}
+                    >
+                        <i className={`fa-solid ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
+                    </button>
+                </div>
+                
+                {/* Listening Status Indicator */}
+                {isListening && (
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                        <span className="flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        </span>
+                        <span className="text-xs font-medium text-red-500">Listening... Speak now</span>
+                    </div>
+                )}
               </div>
+              
+              {/* Embedded Assistant */}
+              {showAssistant && (
+                <div className="animate-fadeIn">
+                    <ChatAssistant 
+                        embedded 
+                        onClose={() => setShowAssistant(false)}
+                        onApplyContent={(text) => setAudioTranscript(text)}
+                        systemInstruction="You are an expert at describing civic issues (potholes, garbage, lights, etc.). Help the user write a detailed description for their report. Ask for specific details like location markers, size of damage, or potential hazards to public safety. If the user asks for a description, provide a clear, concise paragraph they can use directly."
+                        initialMessage="I can help you describe the issue. Tell me what you see, and I'll help you phrase it for the authorities."
+                    />
+                </div>
+              )}
             </div>
 
             <button 
+              type="button"
               disabled={!image}
               onClick={handleAnalyze}
               className="w-full mt-6 bg-blue-600 disabled:bg-slate-300 text-white py-3 rounded-lg font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"

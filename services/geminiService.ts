@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { AIAnalysisResult, Severity, Ticket } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -122,4 +122,48 @@ export const getCommissionerResponse = async (ticket: Ticket) => {
   });
 
   return response.text;
+};
+
+// --- Agent 4: App Guide Assistant (Chat) ---
+export const askChatAssistant = async (
+  userQuery: string, 
+  history: { role: 'user' | 'model'; text: string }[] = [],
+  customSystemInstruction?: string
+) => {
+  const modelId = "gemini-2.5-flash";
+  const defaultSystemInstruction = `
+    You are the CivicAI Voice Assistant. 
+    Your job is to guide users on how to use this application clearly and briefly.
+    
+    Key Features to explain:
+    1. **Report Issue**: Users can upload a photo or take a picture of a civic issue (like potholes, garbage). You can also add a voice note. Our AI analyzes the image to detect the problem and severity automatically.
+    2. **Dashboard**: Shows the feed of all community-reported issues.
+    3. **Ticket Search**: Users can track the status of their specific ticket using the 4-digit Ticket ID.
+    4. **Heatmap**: Displays a map view of where issues are concentrated in the city.
+    
+    Keep responses very short (max 2-3 sentences), friendly, and conversational, as your response will be spoken out loud to the user.
+    If the user says "Hello" or "Hi", introduce yourself as the CivicAI Assistant.
+  `;
+
+  const instruction = customSystemInstruction || defaultSystemInstruction;
+
+  try {
+    const chat = ai.chats.create({
+      model: modelId,
+      config: {
+        systemInstruction: instruction,
+        maxOutputTokens: 200,
+      },
+      history: history.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.text }],
+      })),
+    });
+
+    const result = await chat.sendMessage({ message: userQuery });
+    return result.text || "I'm sorry, I couldn't process that.";
+  } catch (e) {
+    console.error(e);
+    return "I'm having trouble connecting to the network. Please try again.";
+  }
 };

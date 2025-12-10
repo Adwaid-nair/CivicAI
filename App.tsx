@@ -5,6 +5,7 @@ import ReportIssue from './pages/ReportIssue';
 import TicketDetail from './pages/TicketDetail';
 import Heatmap from './pages/Heatmap';
 import SearchTicket from './pages/SearchTicket';
+import ChatAssistant from './components/ChatAssistant';
 
 const App: React.FC = () => {
   // Simple Hash Routing Simulation
@@ -70,11 +71,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative">
       <Navbar currentPage={route} onNavigate={(page) => navigate(page)} />
       <main className="flex-1">
         {content}
       </main>
+      
+      {/* Floating AI Assistant */}
+      <ChatAssistant />
       
       {/* Disclaimer for Hackathon Judges */}
       <div className="bg-slate-900 text-slate-400 py-4 text-center text-xs">
