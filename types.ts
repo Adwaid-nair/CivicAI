@@ -50,6 +50,7 @@ export interface Ticket {
     detectedObjects: string[];
     confidence: number;
     reasoning: string;
+    detectedSeverity?: Severity;
   };
   drafts?: {
     emailSubject: string;
