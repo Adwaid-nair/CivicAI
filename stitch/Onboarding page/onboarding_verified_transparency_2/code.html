@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Onboarding: Verified Transparency</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#10b981",
+                        "background-light": "#ffffff",
+                        "accent-cyan": "#00e5ff",
+                        "accent-purple": "#7c3aed"
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-slate-50 text-slate-900 font-display antialiased min-h-screen flex items-center justify-center p-4">
+<div class="relative flex flex-col w-full max-w-[375px] h-[812px] bg-background-light rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-200">
+<div class="flex-1 flex flex-col items-center justify-center p-6 mt-12">
+<div class="relative w-64 h-64 mb-10 flex items-center justify-center">
+<div class="absolute inset-0 bg-primary/20 rounded-xl blur-2xl"></div>
+<div class="absolute w-56 h-56 glass-card rounded-xl rotate-6"></div>
+<div class="absolute w-56 h-56 glass-card rounded-xl -rotate-3 z-10 flex items-center justify-center">
+<div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+<span class="material-symbols-outlined text-white text-5xl">verified</span>
+</div>
+</div>
+</div>
+<h2 class="text-slate-900 tracking-tight text-[28px] font-bold leading-tight text-center pb-3">Verified Transparency</h2>
+<p class="text-slate-500 text-base font-normal leading-normal text-center px-2">
+                Track every step of the repair process with real-time AI verification and public accountability maps.
+            </p>
+</div>
+<div class="flex flex-col items-center px-6 pb-10">
+<div class="flex flex-row items-center justify-center gap-3 py-6">
+<div class="h-2 w-2 rounded-full bg-slate-300"></div>
+<div class="h-2 w-6 rounded-full bg-accent-cyan"></div>
+<div class="h-2 w-2 rounded-full bg-slate-300"></div>
+</div>
+<button class="w-full h-14 rounded-full bg-gradient-to-r from-accent-purple to-accent-cyan flex items-center justify-center text-white text-lg font-bold tracking-wide shadow-lg hover:opacity-90 transition-opacity">
+<span>Continue</span>
+<span class="material-symbols-outlined ml-2 text-xl">arrow_forward</span>
+</button>
+</div>
+</div>
+
+</body></html>
