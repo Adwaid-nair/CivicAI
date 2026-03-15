@@ -1,0 +1,41 @@
+Cloudinary keys missing. Falling back to local disk storage for uploads.
+CivicAI Backend listening on port 5000
+GEMINI_API_KEY is missing. Mocking AI response.
+PAYLOAD TO PRISMA: {
+  "trackingId": "CIV-1304-DH4",
+  "category": "Electricity",
+  "description": "Sparks flying",
+  "inputMethod": "camera",
+  "severity": "MEDIUM",
+  "estimatedCostMin": 1000,
+  "estimatedCostMax": 5000,
+  "status": "SUBMITTED",
+  "lat": 20,
+  "lng": 78,
+  "aiAnalysis": {
+    "isValid": true,
+    "category": "Electricity",
+    "severity": "MEDIUM",
+    "estimatedCostMin": 1000,
+    "estimatedCostMax": 5000
+  },
+  "aiConfidence": 95,
+  "images": {
+    "create": [
+      {
+        "imageUrl": "C:\\Final Projects\\CivicAI\\backend\\uploads\\images-1773160121887-459445826-dummy.jpg",
+        "isPrimary": true,
+        "aiValidated": true
+      }
+    ]
+  }
+}
+Report CIV-1304-DH4 routed to AGENT path.
+≡ƒñû [Agent 1] Citizen Advocate Agent triggered for Report 7ffeea68-d185-40c2-9007-f2ef0c974eec
+ΓÜá∩╕Å SMTP credentials missing. Mocking email send to test-authority@example.com
+
+--- MOCK EMAIL BEGIN ---
+Subject: [CivicAI Alert] MEDIUM Severity Issue
+An infrastructure issue has been reported. (AI generation skipped or failed).
+--- MOCK EMAIL END ---
+

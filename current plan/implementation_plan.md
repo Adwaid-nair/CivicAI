@@ -102,22 +102,22 @@ graph TB
 ### Module 1: Authentication & User Management
 | Feature | Description |
 |---------|-------------|
-| Sign Up / Login | Email + password, Google OAuth |
-| Role-Based Access | `citizen`, `official`, `contractor`, `worker`, `admin` |
-| Profile Management | Edit profile, view points, report history |
-| Anonymous Mode | Optional anonymous reporting toggle |
+| Sign Up / Login | Email + password, Google OAuth (Required for Officials/Contractors; Optional for Citizens) |
+| Role-Based Access | `citizen` (optional), `official`, `contractor`, `worker`, `admin` |
+| Profile Management | Edit profile, view points, report history (if logged in) |
+| Anonymous Mode | Default for new citizens. Immediate reporting without account creation. |
 
 **Strict Role-Based Section Access:**
 | Role | Can Access | Cannot Access |
 |------|-----------|---------------|
-| 🏠 Citizen | Report form, My Reports, Public Dashboard, Ticket Tracker, Profile, Points | Authority Dashboard, Worker Panel, Admin |
+| 🏠 Citizen | Report form (no auth required), Public Dashboard, Ticket Tracker. If logged in: My Reports, Profile, Points | Authority Dashboard, Worker Panel, Admin |
 | 🏛️ Official (Authority Head) | Authority Dashboard, Issue Queue, AI Recommendations, Resource Mgmt, Analytics | Citizen report form, Worker task panel |
 | 👷 Worker | My Tasks, Check-in, Complete Task, Profile | Authority Dashboard, Citizen sections |
 | 🏗️ Contractor | Available Bids, My Bids, Completed Projects | Authority Dashboard, Worker panel |
 | 🔑 Admin | Everything | — |
 
 > [!IMPORTANT]
-> Protection is enforced at **both layers**: frontend route guards (redirect unauthorized roles) AND backend API middleware (reject requests with wrong role in JWT). Citizens cannot even see the URL routes for authority/worker sections.
+> Protection is enforced at **both layers**: frontend route guards (redirect unauthorized roles) AND backend API middleware. Citizens do not need to log in to access the Report Form and Public heatmaps. Other sections require strict JWT validation.
 
 ---
 
@@ -130,10 +130,11 @@ graph TB
 | **Flash Control** | Use `ImageCapture` API + `MediaStreamTrack.applyConstraints({ torch: true })` for flashlight on supported devices |
 | **Multi-Photo Support** | Capture up to 10 photos per report, shown as scrollable thumbnails below the viewfinder |
 | **Photo Preview** | Tap any thumbnail to full-screen preview with retake / delete options |
-| **EXIF Metadata** | Extract timestamp + GPS coordinates at capture time via `navigator.geolocation` |
-| **Video Recording** | `MediaRecorder` API for optional 360° panoramic video evidence |
-| **Freshness Check** | AI verifies capture timestamp to ensure recency |
-| **AI Scan Overlay** | Cyan corner brackets + scan line animation overlaid on the viewfinder while AI is analyzing |
+| EXIF Metadata | Extract timestamp + GPS coordinates at capture time via `navigator.geolocation` |
+| **"Quick Sweep" Video** | For complex issues (Roads/Bridges), prompts user to record a quick 5-second, 180° pan (instead of a full 360) so AI can estimate volume/cost easier. |
+| Freshness Check | AI verifies capture timestamp to ensure recency |
+| AI Scan Overlay | Cyan corner brackets + scan line animation overlaid on the viewfinder while AI is analyzing |
+| **Real-time Safety Warnings** | If AI instantly detects a severe hazard in the live viewfinder (e.g., exposed sparking wire), it overlays a bold warning: "⚠️ DANGER DETECTED: Step back 10 feet" |
 
 > [!IMPORTANT]
 > The camera module must **NEVER** launch the native camera app or file picker. All camera interaction happens **inline within the webpage** using WebRTC (`getUserMedia` → `<video>` → `<canvas>` capture). Gallery/file uploads are completely blocked. This approach works on both mobile browsers and desktop.
@@ -146,10 +147,14 @@ graph TB
 ### Module 3: Report Submission & AI Processing
 | Feature | Description |
 |---------|-------------|
+| **Proximity Duplicate Alert** | While waiting for location lock, checks DB for issues within 50m. Pops up: *"Similar issue reported nearby. Is this the Pothole on Market St?"* to save user time. |
+| **Active AI Chat Assistant** | A floating action button (FAB) that opens a conversational interface. If a user is unsure what to report or how to capture evidence, they can chat or talk to the AI (powered by Sarvam AI for multiple Indian languages), which guides them step-by-step and autofills the form for them. |
 | Text Description | Standard text input for issue details |
-| Voice-to-Text | Speech recognition using Web Speech API with language selection |
+| **Voice-to-Text (Sarvam AI)** | Speech recognition specifically tailored for regional Indian languages (Hindi, Tamil, Telugu, etc.) using Sarvam AI integration. |
+| **Tone Analysis** | If voice recording is used, Gemini analyzes emotional tone (e.g., panicked). Panicked audio instantly bumps the issue to CRITICAL severity. |
 | Location Auto-Detect | GPS auto-fill with manual map-pin adjustment |
-| Category Selection | Pre-filled by AI, editable by user (Road, Water, Electricity, Drainage, Bridge, Building) |
+| Category Dropdown | Explicit dropdown menu for related problems (Road, Water, Electricity, Infrastructure, Physical Structure, etc.). Selected by user, verified and saved by AI. |
+| Optional Contact Info | An optional input for unauthenticated users to provide an email or phone number to receive future updates about their specific report. |
 | AI Processing Pipeline | Runs on submission (see AI Pipeline section below) |
 
 ---
@@ -165,8 +170,10 @@ flowchart LR
     E --> F[Location Verification]
     F --> G[Duplicate Check]
     G -->|Unique| H[Cost Estimation]
-    G -->|Duplicate| I[🔗 Link to Existing]
-    H --> J[✅ Report Created]
+    G -->|Duplicate| I{Severity Comparison}
+    I -->|Worsened| J[Update Existing Report + Increase Urgency]
+    I -->|Same/Less| K[🔗 Link as Proof to Existing]
+    H --> L[✅ Report Created]
 ```
 
 | Stage | AI Task | Details |
@@ -175,7 +182,7 @@ flowchart LR
 | **2. Issue Classification** | Detect issue type | Categories: Pothole, Broken Road, Water Leak, Damaged Bridge, Exposed Wiring, Blocked Drain, Building Damage, Street Light, etc. |
 | **3. Severity Assessment** | Rate severity: `Low`, `Medium`, `High`, `Critical` | Based on size, danger level, traffic impact |
 | **4. Location Verification** | Cross-check GPS with Google Street View | Compare surroundings to verify the user is actually at the reported location |
-| **5. Duplicate Detection** | Check for existing reports within 200m radius | Uses PostGIS `ST_DWithin` for geospatial proximity search |
+| **5. Duplicate Detection & Escalation** | Check for existing reports within 200m radius | Uses PostGIS `ST_DWithin`. If a duplicate exists, the AI compares the new photo to the old photo. If the issue has worsened (increased severity), it updates the existing ticket's urgency, SLA, and evidence. Otherwise, it just links the new photo as additional proof. |
 | **6. Cost Estimation** | Estimate repair cost range | Based on issue type, severity, and regional cost data; generates a hidden base price |
 
 > [!NOTE]
@@ -271,6 +278,7 @@ A dedicated dashboard for department heads (e.g., Electricity Board Head, Munici
 
 | Feature | Description |
 |---------|-------------|
+| **Global Filters** | Mandatory dropdown menus for **State**, **District**, and **Problem Category** (Road, Water, Electricity, etc.) to filter the entire dashboard view. |
 | **Issue Queue** | All reported issues in their jurisdiction, sorted by severity/SLA urgency, with AI analysis, photos, and location |
 | **AI Recommendations** | Agent 2 suggestions: recommended worker, skill match, proximity, estimated time — authority clicks "Assign" to confirm |
 | **Resource Overview** | Dashboard showing: total workers (e.g., 20), available workers, vehicles (e.g., 5), current assignments, workload distribution |
@@ -324,13 +332,16 @@ For issues requiring external contractors — road repairs, bridge reconstructio
 
 | Feature | Description |
 |---------|-------------|
+| **Toggled Tab View** | Two distinct tabs on the dashboard: **"Active Issues"** and **"Resolved Issues"**. This keeps the primary view focused strictly on un-fixed problems, while archiving fixed issues cleanly in the second tab. |
 | Heatmap View | Leaflet map with color-coded pins (Red = Critical, Orange = High, Yellow = Medium, Green = Resolved) |
-| State/District Filters | Cascading dropdowns to filter by location |
+| Global Filters | Cascading dropdown menus for **State**, **District**, and **Problem Category** to filter by location and related problems. |
+| **City Health Score** | A live 0-100 score for the selected District that drops for SLA breaches and rises for swift resolutions, creating gamified accountability. |
 | KPI Cards | Total reports, resolution rate, avg resolution time, active issues |
-| Status Pie Chart | Distribution of report statuses |
-| Ticket Tracker | Public search by tracking ID → shows status timeline |
+| **Follow an Issue** | Citizens can "Follow" any pin on the map to receive push notifications on its repair progress, without having reported it themselves. |
+| Workflow Tracker | A highly detailed public ticket tracking view. For any given issue, a citizen sees the complete pipeline workflow (Submitted → AI Validated → Accepted/Rejected by Authority → Worker Assigned → Fixed → AI Verified) with timestamps and reasons (especially if rejected). |
+| **Before & After Sliders** | In the "Resolved Issues" tab, citizens can use an interactive drag slider to visually compare the original damage photo with the AI-verified repair photo. |
 | Agent Activity Log | Public view of automated actions taken (anonymized) |
-| Leaderboard | Top citizens by points (opt-in) |
+| **"Local Heroes" Leaderboard** | Highlights the top 3 Government Workers/Contractors of the month in that district to boost morale. |
 
 ---
 
@@ -673,13 +684,13 @@ civic-ai/
 │   ├── public/
 │   ├── src/
 │   │   ├── app/                 # App Router pages
-│   │   │   ├── (auth)/          # Login, Register
-│   │   │   ├── (dashboard)/     # Protected dashboard pages
-│   │   │   │   ├── reports/     # My reports, new report
-│   │   │   │   ├── profile/     # User profile
-│   │   │   │   ├── worker/      # Worker task panel
-│   │   │   │   ├── bidding/     # Contractor bidding (construction)
-│   │   │   │   └── admin/       # Admin panel + agent monitoring
+│   │   │   ├── login/           # Login
+│   │   │   ├── register/        # Register
+│   │   │   ├── reports/         # My reports, new report
+│   │   │   ├── profile/         # User profile
+│   │   │   ├── worker/          # Worker task panel
+│   │   │   ├── contractor/      # Contractor panel
+│   │   │   ├── dashboard/       # Public & official dashboards
 │   │   │   ├── public/          # Public dashboard
 │   │   │   └── track/[id]/      # Public ticket tracker
 │   │   ├── components/
@@ -745,6 +756,7 @@ civic-ai/
 - [ ] Authentication system (JWT + Google OAuth)
 - [ ] User management with roles
 - [ ] Database schema & migrations
+- [ ] Primary Entry Point: **Home Selector Screen** (A clean gateway offering "Report Issue" or "Public Dashboard")
 - [ ] Mobile-first UI shell (bottom nav, responsive layout, dark mode)
 
 ### Phase 2 — Core Reporting (Week 3-4)
@@ -776,72 +788,73 @@ civic-ai/
 ### Phase 5 — Gamification & PWA (Week 9-10)
 - [ ] Points & reputation system
 - [ ] Leaderboard
-- [ ] Multi-language support (Hindi + 2 regional)
-- [ ] PWA setup:
-  - [ ] Web App Manifest (icons, theme, splash screen)
-  - [ ] Service Worker (offline caching, background sync)
-  - [ ] Offline report queue (capture now, submit when online)
-  - [ ] Install prompt ("Add to Home Screen")
-- [ ] Push notifications (Firebase Cloud Messaging)
-- [ ] Performance optimization & testing
+# Goal Description
+Implement the complete integration of the Report Submission Form with the stunning AI Analysis wait screen on the frontend, and resolve critical local filepath issues in the backend AI pipeline.
 
-### Phase 6 — Capacitor Native App (Week 11-12)
-- [ ] Capacitor project setup (Android + iOS)
-- [ ] Native camera plugin (`@capacitor/camera`)
-- [ ] Native geolocation plugin (`@capacitor/geolocation`)
-- [ ] Native push notifications (`@capacitor/push-notifications`)
-- [ ] Deep linking (open tracking links directly in app)
-- [ ] Build & publish to Google Play Store
-- [ ] Build & publish to Apple App Store
+## User Review Required
+> [!IMPORTANT]
+> **API Keys Required**
+> 
+> 1. **Gemini API Key:** Add to `backend/.env` as `GEMINI_API_KEY=your_key`
+> 2. **ImageKit Keys:** Instead of Cloudinary, we'll use ImageKit for image hosting. Create a free account at imagekit.io and add the following to `backend/.env`:
+>    - `IMAGEKIT_PUBLIC_KEY=your_public_key`
+>    - `IMAGEKIT_PRIVATE_KEY=your_private_key`
+>    - `IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_endpoint`
+
+## Proposed Changes
+
+### Frontend Component
+Integrate the existing `analysis.tsx` page into the report submission loop so users get a visual AI processing experience instead of a simple loading text on a button.
+
+#### [NEW] `frontend/src/store/reportStore.ts`
+- Create a lightweight Zustand store to temporarily hold the report data (`category`, `description`, `images` as base64 strings, `lat`, `lng`) between the form page and the analysis page.
+
+#### [MODIFY] `frontend/src/app/report/page.tsx`
+- Remove the direct `api.post` call.
+- Instead, save the captured form state to `reportStore` and use `router.push('/report/analysis')`.
+
+#### [MODIFY] `frontend/src/app/report/analysis/page.tsx`
+- On mount, retrieve the data from `reportStore`.
+- Construct a `FormData` object (converting base64 images back to Blobs).
+- Make the `api.post("/reports/submit", formData)` call.
+- Keep the visual loaders, but ensure the final redirect to `/report/success` only happens when the POST request resolves successfully. If it fails, redirect back or show an error.
 
 ---
 
-## ✅ Verification Plan
+### Backend Component
+Replace Cloudinary with ImageKit and ensure the backend can correctly parse images to send to the Gemini 2.0 Flash API.
+
+#### [MODIFY] `backend/package.json`
+- Install `imagekit`. Uninstall `cloudinary` and `multer-storage-cloudinary`.
+
+#### [MODIFY] `backend/src/middleware/upload.middleware.ts`
+- Remove Cloudinary references.
+- Configure `multer` to store files purely in memory (`multer.memoryStorage()`) so we can pass the buffers directly to both ImageKit and Gemini without saving to disk.
+
+#### [MODIFY] `backend/src/controllers/report.controller.ts`
+- Instead of relying on Cloudinary to upload the files via middleware, handle the file buffers from `req.files`.
+- Upload the buffers to ImageKit using the `imagekit.upload()` SDK.
+- Pass the ImageKit URLs to Gemini for analysis.
+- Save the ImageKit URLs in Prisma.
+
+#### [MODIFY] `backend/src/services/ai.service.ts`
+- Keep `urlToGenerativePart` functional to fetch the image from the ImageKit URL using a standard `fetch`.
+- Ensure the Gemini model ID is consistently set to `gemini-2.0-flash`.
+
+
+## Verification Plan
 
 ### Automated Tests
-- **Unit Tests**: Jest for backend services (AI service, routing service, points calculation)
-- **API Tests**: Supertest for all API endpoints
-- **Frontend Tests**: React Testing Library for critical components (CameraCapture, ReportForm)
-- **E2E Tests**: Playwright for full user flows (sign up → submit report → track status)
+- N/A for these flow changes. We'll rely on TS compiler checks for build integrity.
 
 ### Manual Verification
-1. **Camera Module**: Test on mobile (Android/iOS) + desktop — verify gallery is blocked
-2. **AI Pipeline**: Submit test images of various infrastructure issues — verify classification accuracy
-3. **Location Verification**: Test GPS accuracy across different devices
-4. **Agent Path**: Submit electricity issue → verify Agent 1 sends email → Agent 2 assigns worker → worker completes → AI verifies
-5. **Bidding Path**: Submit road issue → contractor bids → official accepts → verify full flow
-6. **Hybrid Router**: Submit different issue types → verify correct path is chosen
-7. **Public Dashboard**: Verify heatmap loads with real data, filters work correctly
-8. **Voice Input**: Test voice-to-text in different environments (quiet/noisy)
-
----
-
-## 🔐 Security Considerations
-
-| Concern | Mitigation |
-|---------|------------|
-| Image tampering | EXIF metadata validation + AI freshness check |
-| Fake reports | AI validation + reputation system penalties |
-| Rate limiting | Redis-based rate limiting (10 reports/day per user) |
-| Data privacy | Anonymous mode, GDPR-compliant data handling |
-| API security | JWT auth, input validation, SQL injection prevention via Prisma ORM |
-| File uploads | Image-only validation, size limits (10MB), virus scanning |
-
----
-
-## 💰 Estimated Costs (Monthly, at moderate scale ~10K users)
-
-| Service | Estimated Cost |
-|---------|---------------|
-| Vercel (Frontend) | Free tier / $20 |
-| Railway (Backend) | ~$10-20 |
-| PostgreSQL (Supabase/Railway) | Free tier / $25 |
-| Redis (Upstash) | Free tier / $10 |
-| Gemini API | ~$50-100 (depends on usage) |
-| Google Maps API | ~$50-100 |
-| Cloudinary (Images) | Free tier / $50 |
-| Firebase (Push notifications) | Free tier |
-| **Total** | **~$150-325/month** |
-
-> [!TIP]
-> Start with free tiers everywhere. Most services offer generous free tiers that can handle initial launch traffic easily.
+1. **Frontend Flow**: Navigate to the "Report Issue" page locally.
+   - Take a dummy photo with the inline camera widget.
+   - Fill out the description.
+   - Click "Submit to Authority".
+   - Verify that it transitions to the animated `Civic AI Analysis` screen.
+2. **Backend Execution**:
+   - Check the backend console to verify the image array is received.
+   - Verify the `ai.service.ts` successfully reads the local file from disk without throwing a fetch error.
+   - Check the Prisma DB (or the console logs) to see if the ticket is created with proper AI validation results.
+   - Ensure the user is finally transitioned to the Success screen.

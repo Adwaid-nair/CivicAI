@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(uuid()) @db.Uuid
+  email         String          @unique @db.VarChar(255)
+  passwordHash  String?         @db.VarChar(255)
+  name          String          @db.VarChar(100)
+  phone         String?         @db.VarChar(15)
+  role          Role            @default(CITIZEN)
+  avatarUrl     String?
+  points        Int             @default(0)
+  level         String          @default("Newcomer") @db.VarChar(50)
+  authProvider  AuthProvider    @default(LOCAL)
+  isAnonymous   Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+  bids          Bid[]
+  notifications Notification[]
+  pointsLedger  PointsLedger[]
+  reports       Report[]        @relation("UserReports")
+  statusChanges StatusHistory[]
+  workerProfile Worker?
+}
+
+model Report {
+  id                String             @id @default(uuid()) @db.Uuid
+  trackingId        String             @unique @db.VarChar(12)
+  userId            String?            @db.Uuid
+  title             String?            @db.VarChar(200)
+  description       String?
+  inputMethod       String             @default("text") @db.VarChar(20)
+  category          String?            @db.VarChar(50)
+  severity          Severity?
+  status            Status             @default(SUBMITTED)
+  workflowPath      WorkflowPath?
+  lat               Float
+  lng               Float
+  address           String?
+  state             String?            @db.VarChar(100)
+  district          String?            @db.VarChar(100)
+  pincode           String?            @db.VarChar(6)
+  roadType          String?            @db.VarChar(50)
+  jurisdiction      String?            @db.VarChar(100)
+  assignedDeptId    String?            @db.Uuid
+  aiConfidence      Decimal?           @db.Decimal(5, 2)
+  aiAnalysis        Json?
+  estimatedCostMin  Decimal?           @db.Decimal(12, 2)
+  estimatedCostMax  Decimal?           @db.Decimal(12, 2)
+  basePrice         Decimal?           @db.Decimal(12, 2)
+  duplicateOfId     String?            @db.Uuid
+  slaDeadline       DateTime?
+  resolvedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now()) @updatedAt
+  agentActions      AgentAction[]
+  bids              Bid[]
+  notifications     Notification[]
+  pointsLedger      PointsLedger[]
+  department        Department?        @relation(fields: [assignedDeptId], references: [id])
+  duplicateOf       Report?            @relation("DuplicateReports", fields: [duplicateOfId], references: [id])
+  duplicates        Report[]           @relation("DuplicateReports")
+  user              User?              @relation("UserReports", fields: [userId], references: [id])
+  images            ReportImage[]
+  statusHistory     StatusHistory[]
+  workerAssignments WorkerAssignment[]
+
+  @@index([status])
+  @@index([trackingId])
+  @@index([userId])
+  @@index([jurisdiction, state, district])
+}
+
+model ReportImage {
+  id           String    @id @default(uuid()) @db.Uuid
+  reportId     String    @db.Uuid
+  imageUrl     String
+  thumbnailUrl String?
+  capturedAt   DateTime?
+  exifLat      Float?
+  exifLng      Float?
+  isPrimary    Boolean   @default(false)
+  aiValidated  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  report       Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model Department {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(200)
+  type         String?  @db.VarChar(50)
+  state        String?  @db.VarChar(100)
+  district     String?  @db.VarChar(100)
+  contactEmail String?  @db.VarChar(255)
+  contactPhone String?  @db.VarChar(15)
+  reports      Report[]
+  workers      Worker[]
+}
+
+model Worker {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @db.Uuid
+  skillType          String             @db.VarChar(50)
+  departmentId       String?            @db.Uuid
+  isAvailable        Boolean            @default(true)
+  currentLat         Float?
+  currentLng         Float?
+  maxConcurrentTasks Int                @default(3)
+  activeTasks        Int                @default(0)
+  rating             Decimal            @default(5.00) @db.Decimal(3, 2)
+  createdAt          DateTime           @default(now())
+  department         Department?        @relation(fields: [departmentId], references: [id])
+  user               User               @relation(fields: [userId], references: [id])
+  assignments        WorkerAssignment[]
+
+  @@index([skillType, isAvailable])
+}
+
+model WorkerAssignment {
+  id                 String    @id @default(uuid()) @db.Uuid
+  reportId           String    @db.Uuid
+  workerId           String    @db.Uuid
+  assignedBy         String    @default("agent") @db.VarChar(20)
+  status             String    @default("assigned") @db.VarChar(20)
+  checkedInAt        DateTime?
+  completedAt        DateTime?
+  completionPhotoUrl String?
+  aiFixVerified      Boolean   @default(false)
+  notes              String?
+  createdAt          DateTime  @default(now())
+  report             Report    @relation(fields: [reportId], references: [id])
+  worker             Worker    @relation(fields: [workerId], references: [id])
+
+  @@index([reportId])
+}
+
+model AgentAction {
+  id             String            @id @default(uuid()) @db.Uuid
+  reportId       String?           @db.Uuid
+  agentType      String            @db.VarChar(30)
+  actionType     String            @db.VarChar(50)
+  details        Json?
+  recipientEmail String?           @db.VarChar(255)
+  status         AgentActionStatus @default(COMPLETED)
+  createdAt      DateTime          @default(now())
+  report         Report?           @relation(fields: [reportId], references: [id])
+
+  @@index([reportId])
+}
+
+model Bid {
+  id           String    @id @default(uuid()) @db.Uuid
+  reportId     String    @db.Uuid
+  contractorId String    @db.Uuid
+  amount       Decimal   @db.Decimal(12, 2)
+  timelineDays Int
+  proposal     String?
+  status       BidStatus @default(PENDING)
+  createdAt    DateTime  @default(now())
+  contractor   User      @relation(fields: [contractorId], references: [id])
+  report       Report    @relation(fields: [reportId], references: [id])
+}
+
+model PointsLedger {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  action    String   @db.VarChar(50)
+  points    Int
+  reportId  String?  @db.Uuid
+  createdAt DateTime @default(now())
+  report    Report?  @relation(fields: [reportId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model StatusHistory {
+  id          String   @id @default(uuid()) @db.Uuid
+  reportId    String   @db.Uuid
+  oldStatus   Status?
+  newStatus   Status
+  changedById String?  @db.Uuid
+  notes       String?
+  createdAt   DateTime @default(now())
+  changedBy   User?    @relation(fields: [changedById], references: [id])
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  type      String   @db.VarChar(50)
+  title     String?  @db.VarChar(200)
+  message   String?
+  isRead    Boolean  @default(false)
+  reportId  String?  @db.Uuid
+  createdAt DateTime @default(now())
+  report    Report?  @relation(fields: [reportId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+}
+
+enum Role {
+  CITIZEN
+  OFFICIAL
+  CONTRACTOR
+  WORKER
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkflowPath {
+  AGENT
+  BIDDING
+}
+
+enum Status {
+  SUBMITTED
+  AI_PROCESSING
+  VERIFIED
+  ROUTED
+  IN_PROGRESS
+  FIXED
+  AI_VERIFIED
+  CLOSED
+}
+
+enum AgentActionStatus {
+  COMPLETED
+  FAILED
+  PENDING
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}

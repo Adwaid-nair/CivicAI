@@ -7,47 +7,50 @@
 ## Phase 1 — Foundation
 
 ### 1.1 Project Setup
-- [ ] Initialize Next.js 14 (App Router) + TypeScript frontend
-- [ ] Initialize Express.js backend
-- [ ] Setup Prisma ORM with PostgreSQL + PostGIS schema
-- [ ] Configure environment variables (.env files)
-- [ ] Setup project folder structure (as per implementation plan)
+- [x] Initialize Next.js 14 (App Router) + TypeScript frontend
+- [x] Initialize Express.js backend
+- [x] Setup Prisma ORM with PostgreSQL + PostGIS schema
+- [x] Configure environment variables (.env files)
+- [x] Setup project folder structure (as per implementation plan)
 
 ### 1.2 Design System & UI Shell
-- [ ] Global CSS: dark theme, glassmorphism, brand colors (cyan/purple accents), typography
-- [ ] Reusable UI primitives (buttons, cards, inputs, badges, modals)
-- [ ] TopNav component (logo, desktop nav links, user dropdown)
-- [ ] BottomNav component (role-based mobile navigation — different tabs per role)
-- [ ] Responsive layout wrapper (mobile-first)
+- [x] Global CSS: dark theme, glassmorphism, brand colors (cyan/purple accents), typography
+- [x] Reusable UI primitives (buttons, cards, inputs, badges, modals)
+- [x] TopNav component (logo, desktop nav links, user dropdown)
+- [x] BottomNav component (role-based mobile navigation — different tabs per role)
+- [x] Responsive layout wrapper (mobile-first)
 
-### 1.3 Onboarding & Landing
-- [ ] Onboarding slides (3 screens: `onboarding_report_with_ai`, `onboarding_earn_impact`, `onboarding_verified_transparency`)
-- [ ] Landing page (`civicai_landing_page` — hero, features grid, stats, CTA, footer)
+### 1.3 App Entry & Onboarding
+- [x] Onboarding slides (3 screens: `onboarding_report_with_ai`, `onboarding_earn_impact`, `onboarding_verified_transparency`)
+- [x] Landing page (`civicai_landing_page` — hero, features grid, stats, CTA, footer)
+- [x] **Home Selector Screen** (`civicai_home_selector` — the gateway asking "Report Issue" or "View Dashboard" as the first authenticated view)
+- [x] Unauthenticated Guest Reporting (Citizens can report without an account, only need an account to track updates and rewards)
+- [x] Issue Reporting Screen (Camera + Category Dropdowns)
 
 ### 1.4 Authentication System
-- [ ] Login page — 2 variants (`civicai_login_screen_1`, `civicai_login_screen_2`)
-- [ ] Registration page with role selector (`civicai_registration_screen`)
-- [ ] JWT auth (register, login, profile endpoints)
-- [ ] Auth middleware (JWT verify + role-based authorize)
-- [ ] Zustand auth store with persistence
-- [ ] Axios API client with JWT interceptor
-- [ ] Route guards (frontend) + API middleware (backend) for role-based access
+- [x] Login page — 2 variants (`civicai_login_screen_1`, `civicai_login_screen_2`)
+- [x] Registration page with role selector (`civicai_registration_screen`)
+- [x] JWT auth (register, login, profile endpoints)
+- [x] Auth middleware (JWT verify + role-based authorize)
+- [x] Zustand auth store with persistence
+- [x] Axios API client with JWT interceptor
+- [x] Route guards (frontend) + API middleware (backend) for role-based access
 - [ ] Google OAuth (stretch goal)
 
 ### 1.5 Database Schema & Migrations
-- [ ] Users table (with roles: citizen, official, contractor, worker, admin)
-- [ ] Reports table (with PostGIS geography, status flow, workflow path)
-- [ ] Report images table
-- [ ] Departments table
-- [ ] Workers table (skills, location, availability)
-- [ ] Worker assignments table
-- [ ] Agent actions log table
-- [ ] Bids table
-- [ ] Points ledger table
-- [ ] Status history table
-- [ ] Notifications table
+- [x] Users table (with roles: citizen, official, contractor, worker, admin)
+- [x] Reports table (with PostGIS geography, status flow, workflow path)
+- [x] Report images table
+- [x] Departments table
+- [x] Workers table (skills, location, availability)
+- [x] Worker assignments table
+- [x] Agent actions log table
+- [x] Bids table
+- [x] Points ledger table
+- [x] Status history table
+- [x] Notifications table
 - [ ] Performance indexes (GIST for geospatial, status, tracking_id, etc.)
-- [ ] Run Prisma migrations
+- [x] Run Prisma migrations
 
 ---
 
@@ -66,30 +69,34 @@
 - [ ] Block all `<input type="file">` and gallery access — camera-only enforcement
 
 ### 2.2 Report Submission Form
-- [ ] Full report form page (`Report issue section` stitch)
-  - [ ] Photo evidence section (captured images)
-  - [ ] Location verification with GPS auto-detect + manual adjust
+- [x] Full report form page (`Report issue section` stitch)
+  - [x] Photo evidence section (captured images)
+  - [ ] **"Quick Sweep" Video** recording (180° pan for complex issues)
+  - [x] Location verification with GPS auto-detect + manual adjust
+  - [ ] **Proximity Duplicate Alert** (Checks DB within 50m while getting GPS lock)
   - [ ] Street View cross-check display (match percentage)
   - [ ] Description input (text)
-  - [ ] Voice-to-text input using Web Speech API
+  - [ ] **Voice-to-Text via Sarvam AI** (Support for multiple Indian languages) + **Tone Analysis** integration
   - [ ] Privacy notice (anonymization)
   - [ ] Submit to authority button
 - [ ] Submission success screen (`submission_success_summary` — AI analysis summary, points earned, view status CTA)
 
 ### 2.3 AI Pipeline Integration (Gemini API)
 - [ ] Image validation endpoint (reject non-infrastructure images)
+- [ ] **Real-time Safety Warnings** (Live viewfinder danger detection overlay, e.g., "⚠️ DANGER DETECTED")
 - [ ] Issue detection & classification (pothole, water leak, etc.)
 - [ ] Severity assessment (Low / Medium / High / Critical)
+- [ ] **Voice Tone Assessment** (Panicked audio = automatic CRITICAL severity)
 - [ ] Location verification (GPS cross-check)
-- [ ] Duplicate detection (PostGIS `ST_DWithin` within 200m)
+- [ ] Duplicate detection (PostGIS `ST_DWithin` within 200m) + **Dynamic Severity Escalation** if issue worsened
 - [ ] Cost estimation (hidden base price for bidding benchmark)
 - [ ] AI reporting screens (`civicai_ai_reporting_screen_1` — live analysis overlay, `civicai_ai_reporting_screen_2`)
 - [ ] Structured JSON prompt templates for each AI stage
 
 ### 2.4 Report Storage
 - [ ] Image upload to cloud storage (Cloudinary / S3)
-- [ ] Report creation API with full AI analysis results stored as JSONB
-- [ ] Tracking ID generation (e.g., `CIV-2026-A3X9`)
+- [x] Report creation API (AI analysis to be connected)
+- [x] Tracking ID generation (e.g., `CIV-2026-A3X9`)
 - [ ] Status history logging on creation
 
 ---
@@ -141,7 +148,8 @@
 ## Phase 4 — Dashboards, Bidding & Workers
 
 ### 4.1 Citizen Dashboard
-- [ ] Citizen home (`civicai_citizen_dashboard` — welcome, report CTA, stats cards, recent reports)
+- [ ] Citizen home (`civicai_citizen_dashboard` — welcome, stats cards, recent reports)
+- [ ] Global Filters across all dashboard views (State, District, Problem Category)
 - [ ] My Reports list with status badges
 - [ ] Issue lifecycle tracking (`civicai_issue_lifecycle_tracking` — status timeline)
 
@@ -149,6 +157,7 @@
 - [ ] Authority dispatch board (`civicai_authority_dispatch_board` — issue queue, AI agent recommendations, approve dispatch)
 - [ ] Official impact dashboard (`civicai_official_impact_dashboard` — city health score, active issues, repairs done, contractor bids, budget allocation)
 - [ ] City health heatmap (`civicai_city_health_heatmap` — full map view with search, filters, layers, AI insights)
+- [ ] Global Filters across all dashboard views (State, District, Problem Category)
 - [ ] Worker/crew management
 - [ ] Bulk actions for high-volume periods
 - [ ] SLA alert badges
@@ -164,16 +173,21 @@
 ### 4.4 Worker Panels
 - [ ] Worker task interface (`civicai_worker_task_interface` — active job, map, AI analysis, start work, next queue)
 - [ ] Field task panel (`civicai_field_task_panel` — on-site task details)
+- [ ] **GPS Turn-by-Turn Navigation** (Integrate with Google Maps/Apple Maps via capacitor to guide worker directly to the exact GPS coordinates of the issue)
 - [ ] Work verification screen (`civicai_work_verification_screen` — before/after photo submission)
 - [ ] Worker earnings dashboard (`civicai_worker_earnings_dashboard`)
 - [ ] Worker check-in (GPS), complete task, toggle availability APIs
 
 ### 4.5 Public Transparency
-- [ ] Transparency dashboard (`civicai_transparency_dashboard` — live civic tracker, KPI cards, map, recent reports)
+- [x] Transparency dashboard (`civicai_transparency_dashboard` — live civic tracker, KPI cards, map, recent reports)
+- [ ] **Dual Tab Interface** (Active Issues vs. Resolved Issues)
 - [ ] City map view (`civicai_city_map_view` — heatmap with color-coded pins)
-- [ ] Project tracking (`civicai_project_tracking` — public project progress)
-- [ ] Ticket tracker (public search by tracking ID → status timeline)
+- [ ] **City Health Score** visualization (by District)
+- [ ] **Follow Issue** button (subscribe to push notifications for community issues)
+- [ ] Detailed Workflow Tracker (public search by tracking ID → full status timeline)
+- [ ] **Before & After Interactive Sliders** (for resolved issues)
 - [ ] Agent activity log (public, anonymized)
+- [ ] **Local Heroes Leaderboard** (top workers/contractors)
 
 ### 4.6 Community & Social
 - [ ] Community social feed (`civicai_community_social_feed` — before/after comparisons, AI impact summary, upvotes, comments, share)
@@ -193,7 +207,7 @@
 - [ ] My Impact Report section
 
 ### 5.3 Settings & Help
-- [ ] Settings & notifications (`civicai_settings_notifications`)
+- [x] Settings & notifications (`civicai_settings_notifications`)
 - [ ] Help & FAQ center (`civicai_help_faq_center`)
 
 ### 5.4 Audit & Admin

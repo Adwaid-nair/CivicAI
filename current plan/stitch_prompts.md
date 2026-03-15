@@ -577,9 +577,56 @@ Bottom nav: Home, Jobs, Earnings (active, cyan), Profile — 4 tabs.
 
 ---
 
-## 8. Public Transparency
+## 4. Home Selector Screen (Gateway)
 
-### 8.1 — Transparency Dashboard
+```
+Design a mobile "Home Selector" gateway screen (375x812) for a smart-city app called "CivicAI". Dark-mode native app aesthetics with a deep navy background (#0a0e1a).
+
+1. Header: A clean, minimal top bar showing the CivicAI logo. No back buttons.
+2. Hero Section: A welcoming greeting (e.g., "Welcome to CivicAI") and a short subtext ("How can we help your community today?").
+3. Primary Action Card 1: "Report an Issue". A large, highly visible card with a camera/scanner icon. The card should have a subtle cyan glow or border to indicate it is the primary action.
+4. Primary Action Card 2: "Public Dashboard". A large card with a map/analytics icon, styled slightly secondary to the reporting card (e.g., subtle purple accents).
+5. Footer: A minimal bottom navigation bar or a simple footer.
+
+Ensure generous padding, large tap targets, and rounded-2xl corners. Stick strictly to the dark mode palette: #0a0e1a background, #111827 card backgrounds, with #00e5ff (cyan) and #7c3aed (purple) for interactive elements.
+```
+
+---
+
+## 5. Issue Reporting Section (Primary Action)
+
+**Design Inspiration:** Futuristic, camera-first, AI-driven interface. Minimalist dark mode with cyan/purple accents.
+
+**Requirements:**
+- Full-screen height on mobile.
+- **Header:** Sticky header with a back button (`←`) and title "Report Issue".
+- **Step 1: Evidence Capture (Hero Element):** 
+    - A large, prominent rectangular area acting as the camera viewfinder placeholder.
+    - Inside this area: a sleek capture button (circular gradient), with text "Tap to Capture".
+    - Decorate the corners of this area with cyan brackets (`[ ]`) to simulate an AI scanner looking for danger or issues.
+    - Include a small text hint beneath: "Photo or 180° Quick Sweep".
+- **Step 2: Issue Details:**
+    - A custom-styled `<select>` dropdown for **Problem Category** (Options: Road & Streets, Water & Drainage, Electrical/Lighting, Physical Infrastructure, Waste & Cleanup, Other) with a custom chevron icon.
+    - A `<textarea>` for the Description.
+    - Above the description box, align a small "Voice Type" button with a microphone icon to the right, to indicate Sarvam AI voice input (supports Hindi, Tamil, Telugu).
+- **Step 3: Updates (Optional section):**
+    - A standard text input for "Email or Phone Number (Optional)".
+    - Helper text below: "Location data is automatically captured via GPS."
+- **Sticky Footer Action:**
+    - A dark, glassmorphic container pinned to the bottom of the screen.
+    - A single, massive gradient button (Cyan to Purple): "Submit to Authority".
+- **Floating Action Button (FAB):**
+    - A glowing floating button in the bottom right corner (above the sticky footer).
+    - It should have a chatbot/sparkle icon to represent the "Live AI Assistant".
+- **Color Palette:**
+    - Background: Deep Navy/Black (`#0a0e1a`)
+    - Inputs/Cards: Slightly lighter transparent dark (`#111827` or `rgba(255,255,255,0.05)`)
+    - Accents: Cyan (`#00e5ff`) for tech elements, Purple (`#7c3aed`) for gradients.
+    - Text: White and White/60 for secondary text.
+
+---
+
+## 5. Public Transparency Dashboard (Map View)
 
 ```
 Design a mobile transparency dashboard (375x812) for "CivicAI". Dark navy background.

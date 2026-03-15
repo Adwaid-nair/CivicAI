@@ -1,0 +1,6 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   916  100   401  100   515   1528   1962 --:--:-- --:--:-- --:--:--  3496
+{"error":"Failed to submit report","details":"\nInvalid `prisma.report.create()` invocation in\nC:\\Final Projects\\CivicAI\\backend\\dist\\controllers\\report.controller.js:46:44\n\n  43     return;\n  44 }\n  45 const trackingId = generateTrackingId();\nΓåÆ 46 const report = await prisma.report.create(\nThe provided value for the column is too long for the column's type. Column: (not available)"}

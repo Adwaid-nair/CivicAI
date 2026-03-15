@@ -59,3 +59,26 @@ To fix this, explicitly force ngrok to use IPv4 with the following command:
 ```powershell
 ngrok http http://127.0.0.1:3000
 ```
+
+ngrok http 3000
+
+### Live Voice Assistant (Sarvam AI) Setup
+
+To enable the `/assistant` live voice experience, add this to `backend/.env`:
+
+```powershell
+SARVAM_API_KEY=your_sarvam_api_key
+# Optional tuning:
+# SARVAM_CHAT_MODEL=sarvam-m
+# SARVAM_STT_MODEL=saaras:v3
+# SARVAM_STT_MODE=transcribe
+# SARVAM_TTS_MODEL=bulbul:v3
+# SARVAM_TTS_SPEAKER=shubh
+# SARVAM_TTS_LANGUAGE_CODE=en-IN
+```
+
+The backend now proxies Sarvam securely via:
+
+* `POST /api/assistant/stt` (speech-to-text)
+* `POST /api/assistant/chat` (chat completion)
+* `POST /api/assistant/tts` (text-to-speech)

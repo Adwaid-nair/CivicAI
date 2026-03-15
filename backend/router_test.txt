@@ -1,0 +1,6 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100   833  100   192  100   641    234    781 --:--:-- --:--:-- --:--:--  1017
+{"error":"Failed to submit report","details":"\nInvalid `prisma.report.create()` invocation:\n\n\nThe provided value for the column is too long for the column's type. Column: (not available)"}
